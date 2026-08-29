@@ -132,38 +132,95 @@
   }
   #music-toggle:active { transform: scale(0.9); }
 
-  /* 入口界面（简约） */
+  /* 入口界面（来电整蛊风） */
   #entry {
     position: fixed;
     left: 0; top: 0;
     width: 100%; height: 100%;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    background: #fff;
+    justify-content: space-between;
+    padding: 56px 20px 48px;
+    background: linear-gradient(180deg, #10101c 0%, #1a1a2e 55%, #23233a 100%);
     z-index: 20000;
     transition: opacity .5s ease;
+    box-sizing: border-box;
   }
   #entry.hide { opacity: 0; pointer-events: none; }
-  #entry-btn {
-    padding: 16px 42px;
-    border: none;
-    border-radius: 8px;
-    background: #e63946;
-    color: #fff;
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    cursor: pointer;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  .call-top { text-align: center; }
+  .call-status {
+    color: #9aa0b5;
+    font-size: 15px;
+    letter-spacing: 1px;
   }
-  #entry-btn:active { transform: scale(0.96); }
+  .call-name {
+    color: #fff;
+    font-size: 42px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    margin-top: 8px;
+  }
+  .call-avatar {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3a3a5c, #23233a);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 62px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  }
+  .call-hint {
+    color: #9aa0b5;
+    font-size: 16px;
+    text-align: center;
+    min-height: 24px;
+    margin-top: 12px;
+  }
+  .call-actions {
+    display: flex;
+    gap: 64px;
+    align-items: flex-start;
+  }
+  .call-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #fff;
+    font-size: 14px;
+    letter-spacing: 2px;
+  }
+  .call-btn .icon {
+    width: 66px; height: 66px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+  }
+  .call-btn.reject .icon { background: #e63946; }
+  .call-btn.answer .icon { background: #2ecc71; }
+  .call-btn:active .icon { transform: scale(0.9); }
 </style>
 </head>
 <body>
 
 <div id="entry">
-  <button id="entry-btn">银狐病毒欢迎您</button>
+  <div class="call-top">
+    <div class="call-status">未知来电 · 可能骚扰电话</div>
+    <div class="call-name">银狐病毒</div>
+  </div>
+  <div class="call-avatar">🦊</div>
+  <div class="call-hint" id="call-hint">银狐病毒邀请您接听…</div>
+  <div class="call-actions">
+    <button class="call-btn reject" id="btn-reject"><span class="icon">✕</span><span>挂断</span></button>
+    <button class="call-btn answer" id="btn-answer"><span class="icon">📞</span><span>接听</span></button>
+  </div>
 </div>
 
 <div id="center-msg">
@@ -401,13 +458,21 @@
     }
   });
 
-  // 进入正题：点按钮 → 放音乐 + 开始爱心动画
+  // 进入正题：接听来电 → 放音乐 + 开始爱心动画
   var entry = document.getElementById('entry');
-  var entryBtn = document.getElementById('entry-btn');
-  entryBtn.addEventListener('click', function () {
+  var callHint = document.getElementById('call-hint');
+
+  function enter() {
     entry.classList.add('hide');
     startMusic();
     play();
+  }
+
+  document.getElementById('btn-answer').addEventListener('click', enter);
+
+  document.getElementById('btn-reject').addEventListener('click', function () {
+    callHint.textContent = '挂断无效，银狐病毒强行送达祝福… 😈';
+    setTimeout(enter, 900);
   });
 })();
 </script>
