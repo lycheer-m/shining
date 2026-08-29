@@ -245,7 +245,7 @@
     "记得喝水", "按时吃饭", "睡个好觉", "别太累"
   ];
   var POP_INTERVAL = 100;   // 每个间隔（毫秒）
-  var AUTO_CLOSE = 15000;   // 自动消失（毫秒）
+  var AUTO_CLOSE = 15000;   // 自动消失（毫秒）—— 已取消，卡片不再自动消失
 
   // ============ 心形参数方程 ============
   function heartPoints(n) {
@@ -345,18 +345,10 @@
       requestAnimationFrame(function () { el.classList.add('show'); });
     });
 
-    var hideTimer = setTimeout(function () {
-      el.classList.add('hide');
-      setTimeout(function () {
-        if (el.parentNode) el.parentNode.removeChild(el);
-      }, 400);
-    }, AUTO_CLOSE);
+    cards.push({ el: el, hideTimer: null, heartIdx: heartIdx });
 
-    cards.push({ el: el, hideTimer: hideTimer, heartIdx: heartIdx });
-
-    // 点击立即关闭
+    // 点击关闭（不再自动消失）
     el.addEventListener('click', function () {
-      clearTimeout(hideTimer);
       el.classList.add('hide');
       setTimeout(function () {
         if (el.parentNode) el.parentNode.removeChild(el);
@@ -379,19 +371,23 @@
     spawnTimers.push(t);
   }
 
-  // 爱心成形后，随机位置弹文字框铺满屏幕
+  // 爱心成形后，随机位置弹文字框真正铺满屏幕（不自动消失）
   function fillScreen() {
     var vw = window.innerWidth, vh = window.innerHeight;
-    var small = vw < 768;
-    var count = small ? 60 : 100;
+    var cs = getComputedStyle(document.documentElement);
+    var cw = parseFloat(cs.getPropertyValue('--card-w')) || 120;
+    var ch = parseFloat(cs.getPropertyValue('--card-h')) || 50;
+    // 按屏幕面积算数量，约 2 倍覆盖率，真正铺满
+    var count = Math.round((vw * vh) / (cw * ch) * 2.0);
+    count = Math.max(60, Math.min(count, 400));
     var msgs = [];
     for (var i = 0; i < count; i++) msgs.push(MESSAGES[i % MESSAGES.length]);
     msgs.sort(function () { return Math.random() - 0.5; });
     for (var i = 0; i < count; i++) {
       (function (i) {
-        var x = 60 + Math.random() * (vw - 120);
-        var y = 60 + Math.random() * (vh - 120);
-        var t = setTimeout(function () { makeCard(msgs[i], x, y); }, i * 60);
+        var x = 30 + Math.random() * (vw - 60);
+        var y = 30 + Math.random() * (vh - 60);
+        var t = setTimeout(function () { makeCard(msgs[i], x, y); }, i * 15);
         spawnTimers.push(t);
       })(i);
     }
