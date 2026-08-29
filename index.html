@@ -69,7 +69,7 @@
     color: var(--pink-deep);
     font-size: var(--font-s);
     font-weight: 700;
-    border-radius: 14px;
+    border-radius: 4px;
     border: 1px solid rgba(233, 64, 95, 0.18);
     box-shadow: 0 6px 18px rgba(217, 43, 75, 0.22);
     cursor: pointer;
@@ -110,7 +110,7 @@
     opacity: 0;
     pointer-events: none;
     transition: opacity .5s ease, transform .2s ease;
-    z-index: 3;
+    z-index: 10000;
   }
   #replay.show { opacity: 1; pointer-events: auto; }
   #replay:active { transform: translateX(-50%) scale(0.94); }
@@ -128,7 +128,7 @@
     line-height: 1;
     box-shadow: 0 4px 14px rgba(217, 43, 75, 0.28);
     cursor: pointer;
-    z-index: 3;
+    z-index: 10000;
   }
   #music-toggle:active { transform: scale(0.9); }
 </style>
@@ -156,8 +156,8 @@
     "万事顺意", "越来越好", "心想事成", "天天好心情",
     "记得喝水", "按时吃饭", "睡个好觉", "别太累"
   ];
-  var POP_INTERVAL = 200;   // 每个间隔（毫秒）
-  var AUTO_CLOSE = 8000;    // 自动消失（毫秒）
+  var POP_INTERVAL = 100;   // 每个间隔（毫秒）
+  var AUTO_CLOSE = 15000;   // 自动消失（毫秒）
 
   // ============ 心形参数方程 ============
   function heartPoints(n) {
@@ -237,6 +237,7 @@
     '#6366f1', '#0ea5e9', '#14b8a6', '#10b981'
   ];
   var colorIdx = 0;
+  var zTop = 0;
 
   function makeCard(msg, x, y, heartIdx) {
     var el = document.createElement('div');
@@ -244,6 +245,7 @@
     el.style.background = PALETTE[colorIdx % PALETTE.length];
     el.style.color = '#fff';
     el.style.borderColor = 'transparent';
+    el.style.zIndex = ++zTop;   // 新出来的框盖在旧的上面
     colorIdx++;
     el.innerHTML = '<span class="heart">❤</span><span>' + msg + '</span>';
     el.style.left = x + 'px';
@@ -293,7 +295,7 @@
   function fillScreen() {
     var vw = window.innerWidth, vh = window.innerHeight;
     var small = vw < 768;
-    var count = small ? 40 : 60;
+    var count = small ? 60 : 100;
     var msgs = [];
     for (var i = 0; i < count; i++) msgs.push(MESSAGES[i % MESSAGES.length]);
     msgs.sort(function () { return Math.random() - 0.5; });
@@ -301,7 +303,7 @@
       (function (i) {
         var x = 60 + Math.random() * (vw - 120);
         var y = 60 + Math.random() * (vh - 120);
-        var t = setTimeout(function () { makeCard(msgs[i], x, y); }, i * 130);
+        var t = setTimeout(function () { makeCard(msgs[i], x, y); }, i * 60);
         spawnTimers.push(t);
       })(i);
     }
@@ -310,6 +312,7 @@
   function play() {
     clearAll();
     colorIdx = 0;
+    zTop = 0;
     var r = responsive();
     positions = computePositions(r.n, r.s, r.vw, r.vh);
 
