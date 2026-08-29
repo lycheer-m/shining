@@ -320,9 +320,9 @@
 
   // 每个文字框一种颜色（循环取色，相邻不重色）
   var PALETTE = [
-    '#e63946', '#ff6b6b', '#f472b6', '#fb7185',
-    '#f97316', '#f59e0b', '#a855f7', '#8b5cf6',
-    '#6366f1', '#0ea5e9', '#14b8a6', '#10b981'
+    '#ffd6dc', '#ffc2c7', '#ffd1b3', '#ffe3b3',
+    '#fce1a4', '#d8c7f7', '#c9bdf2', '#b8d4f5',
+    '#a8d8ea', '#b7e4c7', '#c4e2c9', '#ffd1dc'
   ];
   var colorIdx = 0;
   var zTop = 0;
@@ -330,9 +330,11 @@
   function makeCard(msg, x, y, heartIdx) {
     var el = document.createElement('div');
     el.className = 'card';
-    el.style.background = PALETTE[colorIdx % PALETTE.length];
-    el.style.color = '#fff';
-    el.style.borderColor = 'transparent';
+    var c = PALETTE[colorIdx % PALETTE.length];
+    el.style.background = 'radial-gradient(ellipse at center, ' + c + ' 55%, transparent 100%)';
+    el.style.color = '#222';
+    el.style.border = 'none';
+    el.style.boxShadow = 'none';
     el.style.zIndex = ++zTop;   // 新出来的框盖在旧的上面
     colorIdx++;
     el.innerHTML = '<span class="heart">❤</span><span>' + msg + '</span>';
@@ -387,7 +389,7 @@
       (function (i) {
         var x = 30 + Math.random() * (vw - 60);
         var y = 30 + Math.random() * (vh - 60);
-        var t = setTimeout(function () { makeCard(msgs[i], x, y); }, i * 15);
+        var t = setTimeout(function () { makeCard(msgs[i], x, y); }, i * 25);
         spawnTimers.push(t);
       })(i);
     }
