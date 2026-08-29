@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>❤ 送给你</title>
+<meta name="description" content="照顾好自己，愿你被生活温柔以待">
+<meta property="og:title" content="❤ 送给你">
+<meta property="og:description" content="照顾好自己，愿你被生活温柔以待">
+<meta property="og:image" content="https://lycheer-m.github.io/heart-blessing/cover.png">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://lycheer-m.github.io/heart-blessing/">
+<style>
+  :root {
+    --pink: #e9405f;
+    --pink-deep: #d92b4b;
+    --ink: #7a1f33;
+    --card-w: 120px;
+    --card-h: 50px;
+    --font-s: 15px;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "微软雅黑",
+                 "Hiragino Sans GB", "Segoe UI", sans-serif;
+  }
+  body {
+    background: radial-gradient(120% 120% at 50% 0%, #ffe3ec 0%, #ffc6d6 45%, #ffaec2 100%);
+  }
+
+  /* 爱心中央的一句话 */
+  #center-msg {
+    position: fixed;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: var(--ink);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1.2s ease;
+    z-index: 1;
+  }
+  #center-msg.show { opacity: 1; }
+  #center-msg .big {
+    font-size: clamp(18px, 3.4vw, 34px);
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  #center-msg .sub {
+    margin-top: 6px;
+    font-size: clamp(12px, 1.8vw, 16px);
+    opacity: 0.85;
+  }
+
+  /* 祝福弹窗卡片 */
+  .card {
+    position: fixed;
+    left: 0; top: 0;
+    width: var(--card-w);
+    height: var(--card-h);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: #fff;
+    color: var(--pink-deep);
+    font-size: var(--font-s);
+    font-weight: 700;
+    border-radius: 14px;
+    border: 1px solid rgba(233, 64, 95, 0.18);
+    box-shadow: 0 6px 18px rgba(217, 43, 75, 0.22);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    /* 出现/消失动画都走这里 */
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+    transition: transform .38s cubic-bezier(.34,1.56,.64,1),
+                opacity .38s ease;
+    z-index: 2;
+  }
+  .card .heart { color: var(--pink); font-size: 1.05em; }
+  .card.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  .card.hide {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.7);
+  }
+
+  /* 再来一次按钮 */
+  #replay {
+    position: fixed;
+    left: 50%; bottom: 26px;
+    transform: translateX(-50%);
+    padding: 10px 22px;
+    border: none;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--pink-deep);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    box-shadow: 0 6px 18px rgba(217, 43, 75, 0.28);
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .5s ease, transform .2s ease;
+    z-index: 3;
+  }
+  #replay.show { opacity: 1; pointer-events: auto; }
+  #replay:active { transform: translateX(-50%) scale(0.94); }
+</style>
+</head>
+<body>
+
+<div id="center-msg">
+  <div class="big">照顾好自己 ❤</div>
+  <div class="sub">愿你被生活温柔以待</div>
+</div>
+
+<button id="replay">♻ 再来一次</button>
+
+<script>
+(function () {
+  // ============ 可改参数 ============
+  var MESSAGES = [
+    "多喝水", "认真吃饭", "早点睡觉", "好好休息",
+    "注意保暖", "天天开心", "身体健康", "心情愉快",
+    "少熬夜", "多运动", "记得吃水果", "元气满满",
+    "笑口常开", "工作顺利", "学业进步", "平安喜乐",
+    "万事顺意", "越来越好", "心想事成", "天天好心情",
+    "记得喝水", "按时吃饭", "睡个好觉", "别太累"
+  ];
+  var POP_INTERVAL = 200;   // 每个间隔（毫秒）
+  var AUTO_CLOSE = 8000;    // 自动消失（毫秒）
+
+  // ============ 心形参数方程 ============
+  function heartPoints(n) {
+    var pts = [];
+    for (var i = 0; i < n; i++) {
+      var t = 2 * Math.PI * i / n;
+      var x = 16 * Math.pow(Math.sin(t), 3);
+      var y = 13 * Math.cos(t) - 5 * Math.cos(2 * t)
+            - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+      pts.push({ x: x, y: y });
+    }
+    return pts;
+  }
+
+  // ============ 心形整体边界（细采样，供缩放居中用） ============
+  var RAW = (function () {
+    var pts = heartPoints(720);
+    var xs = pts.map(function (p) { return p.x; });
+    var ys = pts.map(function (p) { return p.y; });
+    return {
+      w: Math.max.apply(null, xs) - Math.min.apply(null, xs),
+      h: Math.max.apply(null, ys) - Math.min.apply(null, ys),
+      cx: (Math.min.apply(null, xs) + Math.max.apply(null, xs)) / 2,
+      cy: (Math.min.apply(null, ys) + Math.max.apply(null, ys)) / 2
+    };
+  })();
+
+  // ============ 响应式参数 ============
+  function responsive() {
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var small = vw < 768;
+    // 弹窗数量：小屏少一点，避免挤成一团
+    var n = small ? 18 : 28;
+    // 卡片尺寸与字体随屏幕缩放
+    var s = Math.min((vw - 90) / RAW.w, (vh - 110) / RAW.h);
+    s = Math.max(s, 3.5);
+    var cw = Math.min(Math.max(s * 2.4, small ? 62 : 84), 132);
+    var ch = Math.min(Math.max(s * 1.05, small ? 32 : 40), 56);
+    var fs = Math.min(Math.max(s * 0.34, small ? 11 : 13), 17);
+    document.documentElement.style.setProperty('--card-w', cw + 'px');
+    document.documentElement.style.setProperty('--card-h', ch + 'px');
+    document.documentElement.style.setProperty('--font-s', fs + 'px');
+    return { n: n, s: s, vw: vw, vh: vh };
+  }
+
+  // ============ 心形坐标 → 屏幕坐标 ============
+  function computePositions(n, s, vw, vh) {
+    var pts = heartPoints(n);
+    var ox = vw / 2, oy = vh / 2;
+    return pts.map(function (p) {
+      return {
+        x: (p.x - RAW.cx) * s + ox,
+        y: -(p.y - RAW.cy) * s + oy   // 屏幕 y 向下，翻转
+      };
+    });
+  }
+
+  var positions = [];
+  var cards = [];        // { el, hideTimer }
+  var spawnTimers = [];
+
+  function clearAll() {
+    spawnTimers.forEach(clearTimeout);
+    spawnTimers = [];
+    cards.forEach(function (c) {
+      clearTimeout(c.hideTimer);
+      if (c.el.parentNode) c.el.parentNode.removeChild(c.el);
+    });
+    cards = [];
+  }
+
+  function spawnOne(idx, positions, msgs) {
+    if (idx >= positions.length) return;
+    var pos = positions[idx];
+    var el = document.createElement('div');
+    el.className = 'card';
+    el.innerHTML = '<span class="heart">❤</span><span>' + msgs[idx] + '</span>';
+    el.style.left = pos.x + 'px';
+    el.style.top = pos.y + 'px';
+    document.body.appendChild(el);
+
+    // 下一帧再添加 .show，触发过渡动画
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { el.classList.add('show'); });
+    });
+
+    var hideTimer = setTimeout(function () {
+      el.classList.add('hide');
+      setTimeout(function () {
+        if (el.parentNode) el.parentNode.removeChild(el);
+      }, 400);
+    }, AUTO_CLOSE);
+
+    cards.push({ el: el, hideTimer: hideTimer });
+
+    // 点击立即关闭
+    el.addEventListener('click', function () {
+      clearTimeout(hideTimer);
+      el.classList.add('hide');
+      setTimeout(function () {
+        if (el.parentNode) el.parentNode.removeChild(el);
+      }, 400);
+    });
+
+    var t = setTimeout(function () {
+      spawnOne(idx + 1, positions, msgs);
+    }, POP_INTERVAL);
+    spawnTimers.push(t);
+  }
+
+  function play() {
+    clearAll();
+    var r = responsive();
+    positions = computePositions(r.n, r.s, r.vw, r.vh);
+
+    // 祝福文案循环铺满并打乱
+    var msgs = [];
+    for (var i = 0; i < r.n; i++) msgs.push(MESSAGES[i % MESSAGES.length]);
+    msgs.sort(function () { return Math.random() - 0.5; });
+
+    document.getElementById('center-msg').classList.add('show');
+    document.getElementById('replay').classList.add('show');
+
+    spawnOne(0, positions, msgs);
+  }
+
+  // 窗口尺寸变化时重新布局（防抖）
+  var resizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      var r = responsive();
+      positions = computePositions(r.n, r.s, r.vw, r.vh);
+      // 只更新还存在的卡片位置
+      cards.forEach(function (c, i) {
+        var p = positions[i % positions.length];
+        if (p) { c.el.style.left = p.x + 'px'; c.el.style.top = p.y + 'px'; }
+      });
+    }, 150);
+  });
+
+  document.getElementById('replay').addEventListener('click', play);
+
+  // 页面加载后自动开始
+  play();
+})();
+</script>
+</body>
+</html>
