@@ -82,7 +82,7 @@
                 opacity .38s ease;
     z-index: 2;
   }
-  .card .heart { color: var(--pink); font-size: 1.05em; }
+  .card .heart { color: inherit; font-size: 1.05em; }
   .card.show {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
@@ -191,7 +191,7 @@
     var vh = window.innerHeight;
     var small = vw < 768;
     // 弹窗数量：小屏少一点，避免挤成一团
-    var n = small ? 18 : 28;
+    var n = small ? 24 : 40;
     // 卡片尺寸与字体随屏幕缩放
     var s = Math.min((vw - 90) / RAW.w, (vh - 110) / RAW.h);
     s = Math.max(s, 3.5);
@@ -230,14 +230,24 @@
     cards = [];
   }
 
-  function spawnOne(idx, positions, msgs) {
-    if (idx >= positions.length) return;
-    var pos = positions[idx];
+  // 每个文字框一种颜色（循环取色，相邻不重色）
+  var PALETTE = [
+    '#e63946', '#ff6b6b', '#f472b6', '#fb7185',
+    '#f97316', '#f59e0b', '#a855f7', '#8b5cf6',
+    '#6366f1', '#0ea5e9', '#14b8a6', '#10b981'
+  ];
+  var colorIdx = 0;
+
+  function makeCard(msg, x, y, heartIdx) {
     var el = document.createElement('div');
     el.className = 'card';
-    el.innerHTML = '<span class="heart">❤</span><span>' + msgs[idx] + '</span>';
-    el.style.left = pos.x + 'px';
-    el.style.top = pos.y + 'px';
+    el.style.background = PALETTE[colorIdx % PALETTE.length];
+    el.style.color = '#fff';
+    el.style.borderColor = 'transparent';
+    colorIdx++;
+    el.innerHTML = '<span class="heart">❤</span><span>' + msg + '</span>';
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
     document.body.appendChild(el);
 
     // 下一帧再添加 .show，触发过渡动画
@@ -252,7 +262,7 @@
       }, 400);
     }, AUTO_CLOSE);
 
-    cards.push({ el: el, hideTimer: hideTimer });
+    cards.push({ el: el, hideTimer: hideTimer, heartIdx: heartIdx });
 
     // 点击立即关闭
     el.addEventListener('click', function () {
@@ -263,14 +273,43 @@
       }, 400);
     });
 
+    return el;
+  }
+
+  function spawnOne(idx, positions, msgs) {
+    if (idx >= positions.length) {
+      fillScreen();   // 爱心成形后，铺满屏幕
+      return;
+    }
+    var pos = positions[idx];
+    makeCard(msgs[idx], pos.x, pos.y, idx);
     var t = setTimeout(function () {
       spawnOne(idx + 1, positions, msgs);
     }, POP_INTERVAL);
     spawnTimers.push(t);
   }
 
+  // 爱心成形后，随机位置弹文字框铺满屏幕
+  function fillScreen() {
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var small = vw < 768;
+    var count = small ? 40 : 60;
+    var msgs = [];
+    for (var i = 0; i < count; i++) msgs.push(MESSAGES[i % MESSAGES.length]);
+    msgs.sort(function () { return Math.random() - 0.5; });
+    for (var i = 0; i < count; i++) {
+      (function (i) {
+        var x = 60 + Math.random() * (vw - 120);
+        var y = 60 + Math.random() * (vh - 120);
+        var t = setTimeout(function () { makeCard(msgs[i], x, y); }, i * 130);
+        spawnTimers.push(t);
+      })(i);
+    }
+  }
+
   function play() {
     clearAll();
+    colorIdx = 0;
     var r = responsive();
     positions = computePositions(r.n, r.s, r.vw, r.vh);
 
@@ -292,9 +331,10 @@
     resizeTimer = setTimeout(function () {
       var r = responsive();
       positions = computePositions(r.n, r.s, r.vw, r.vh);
-      // 只更新还存在的卡片位置
-      cards.forEach(function (c, i) {
-        var p = positions[i % positions.length];
+      // 只更新还存在的爱心卡片位置（铺满屏幕的随机卡片不动）
+      cards.forEach(function (c) {
+        if (c.heartIdx == null) return;
+        var p = positions[c.heartIdx];
         if (p) { c.el.style.left = p.x + 'px'; c.el.style.top = p.y + 'px'; }
       });
     }, 150);
