@@ -114,6 +114,23 @@
   }
   #replay.show { opacity: 1; pointer-events: auto; }
   #replay:active { transform: translateX(-50%) scale(0.94); }
+
+  /* 音乐按钮 */
+  #music-toggle {
+    position: fixed;
+    top: 20px; right: 20px;
+    width: 48px; height: 48px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--pink-deep);
+    font-size: 22px;
+    line-height: 1;
+    box-shadow: 0 4px 14px rgba(217, 43, 75, 0.28);
+    cursor: pointer;
+    z-index: 3;
+  }
+  #music-toggle:active { transform: scale(0.9); }
 </style>
 </head>
 <body>
@@ -124,6 +141,9 @@
 </div>
 
 <button id="replay">♻ 再来一次</button>
+
+<audio id="bgm" src="music.mp3" loop preload="auto"></audio>
+<button id="music-toggle" title="播放音乐">🎵</button>
 
 <script>
 (function () {
@@ -281,6 +301,26 @@
   });
 
   document.getElementById('replay').addEventListener('click', play);
+
+  // 音乐播放/暂停（手机浏览器需点击才能出声）
+  var bgm = document.getElementById('bgm');
+  var musicBtn = document.getElementById('music-toggle');
+  var musicOn = false;
+  musicBtn.addEventListener('click', function () {
+    if (musicOn) {
+      bgm.pause();
+      musicBtn.textContent = '🎵';
+      musicOn = false;
+    } else {
+      bgm.play().then(function () {
+        musicBtn.textContent = '🔊';
+        musicOn = true;
+      }).catch(function () {
+        musicBtn.textContent = '🎵';
+        musicOn = false;
+      });
+    }
+  });
 
   // 页面加载后自动开始
   play();
